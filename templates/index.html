@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Custom Stylesheet with Universal Loading Fallback -->
-  <link rel="stylesheet" id="aerocastCss" href="/static/css/style.css?v=hampankatta_fix_v44">
+  <link rel="stylesheet" id="aerocastCss" href="/static/css/style.css?v=taluk_border_v45">
   <!-- Leaflet Map CSS with Fallback -->
   <link rel="stylesheet" id="leafletCss" href="/static/vendor/leaflet.css">
   <script>
@@ -24,7 +24,7 @@
         document.getElementById('aerocastCss').href = (isInsideTemplates ? '../static/css/style.css' : 'static/css/style.css') + '?v=remove_x_v41';
         document.getElementById('leafletCss').href = isInsideTemplates ? '../static/vendor/leaflet.css' : 'static/vendor/leaflet.css';
       } else if (isInsideTemplates) {
-        document.getElementById('aerocastCss').href = '../static/css/style.css?v=hampankatta_fix_v44';
+        document.getElementById('aerocastCss').href = '../static/css/style.css?v=taluk_border_v45';
         document.getElementById('leafletCss').href = '../static/vendor/leaflet.css';
       }
     })();
@@ -440,6 +440,9 @@
             <div class="radar-meta-group">
               <span class="radar-tag"><span class="radar-live-blip"></span> S-Band Doppler Live</span>
               <span id="radarUpdateTag" class="radar-tag">Updated: Live</span>
+              <span id="talukBoundaryBadge" class="radar-tag taluk-boundary-tag" style="display: none;" title="Active Taluk Administrative Border">
+                <span class="taluk-border-icon">🗺️</span> <span id="talukBoundaryName">Taluk Border</span>
+              </span>
               <button type="button" id="radarCenterBtn" class="radar-action-btn" onclick="centerMapOnCurrentLocation()" title="Center on Selected Station">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
                 <span>Center Station</span>
@@ -872,11 +875,11 @@
       var isFile = (window.location.protocol === 'file:');
       var path = window.location.pathname || '';
       var isInsideTemplates = path.indexOf('templates') !== -1;
-      var jsSrc = '/static/js/app.js?v=hampankatta_fix_v44';
+      var jsSrc = '/static/js/app.js?v=taluk_border_v45';
       if (isFile) {
         jsSrc = (isInsideTemplates ? '../static/js/app.js' : 'static/js/app.js') + '?v=remove_x_v41';
       } else if (isInsideTemplates) {
-        jsSrc = '../static/js/app.js?v=hampankatta_fix_v44';
+        jsSrc = '../static/js/app.js?v=taluk_border_v45';
       }
       var s = document.createElement('script');
       s.src = jsSrc;

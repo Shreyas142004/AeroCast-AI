@@ -218,6 +218,9 @@ function initRadarMap() {
     radarLayersGroup = L.layerGroup().addTo(radarMap);
     stationMarkersGroup = L.layerGroup().addTo(radarMap);
 
+    // Pre-load Karnataka Taluks Administrative Boundary GeoJSON in background
+    loadTaluksGeoJson();
+
     // Robust multi-stage dimension check for delayed desktop browser, iframe, and VS Code port forwarding layout
     setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 150);
     setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 400);
@@ -276,9 +279,198 @@ function updateMapTiles() {
 }
 
 
-/**
- * Update Radar Layer with Range Rings, dBZ Reflectivity Contours & Stations
- */
+// ============================================================================
+// KARNATAKA TALUK ADMINISTRATIVE BOUNDARY OUTLINE ENGINE
+// ============================================================================
+let talukBoundaryLayer = null;
+let karnatakaTaluksData = null;
+let isTalukGeoJsonLoading = false;
+
+const TALUK_ALIASES = {
+  'bantwal': 'Bantval',
+  'buntwal': 'Bantval',
+  'buntwala': 'Bantval',
+  'bantwala': 'Bantval',
+  'sullia': 'Sulya',
+  'sulya': 'Sulya',
+  'belthangady': 'Beltangadi',
+  'beltangadi': 'Beltangadi',
+  'karkala': 'Karkal',
+  'karkal': 'Karkal',
+  'kundapura': 'Kundapura',
+  'kundapur': 'Kundapura',
+  'mangalore': 'Mangalore',
+  'mangaluru': 'Mangalore',
+  'bangalore': 'Bangalore',
+  'bengaluru': 'Bangalore',
+  'mysore': 'Mysore',
+  'mysuru': 'Mysore',
+  'shivamogga': 'Shimoga',
+  'shimoga': 'Shimoga',
+  'belgaum': 'Belgaum',
+  'belagavi': 'Belgaum',
+  'hubli': 'Hubli',
+  'hubballi': 'Hubli',
+  'dharwad': 'Dharwad',
+  'madikeri': 'Madikeri',
+  'coorg': 'Madikeri',
+  'kodagu': 'Madikeri',
+  'chikkamagaluru': 'Chikmagalur',
+  'chikmagalur': 'Chikmagalur',
+  'puttur': 'Puttur'
+};
+
+function isPointInPolygonRing(lat, lon, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+                      (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isPointInGeometry(lat, lon, geom) {
+  if (!geom || !geom.coordinates) return false;
+  if (geom.type === 'Polygon') {
+    for (const ring of geom.coordinates) {
+      if (isPointInPolygonRing(lat, lon, ring)) return true;
+    }
+  } else if (geom.type === 'MultiPolygon') {
+    for (const poly of geom.coordinates) {
+      for (const ring of poly) {
+        if (isPointInPolygonRing(lat, lon, ring)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+async function loadTaluksGeoJson() {
+  if (karnatakaTaluksData) return karnatakaTaluksData;
+  if (isTalukGeoJsonLoading) return null;
+  isTalukGeoJsonLoading = true;
+  try {
+    const res = await fetch('/static/data/karnataka_taluks.geojson');
+    if (res.ok) {
+      karnatakaTaluksData = await res.json();
+      console.log(`[AeroCast] Loaded ${karnatakaTaluksData.features.length} Karnataka Taluk boundaries.`);
+      return karnatakaTaluksData;
+    }
+  } catch (err) {
+    console.warn('[AeroCast] Taluk boundaries GeoJSON could not be loaded:', err);
+  } finally {
+    isTalukGeoJsonLoading = false;
+  }
+  return null;
+}
+
+async function updateTalukBoundary(lat, lon, locationName, isKarnataka = true) {
+  if (!radarMap) return;
+
+  const badgeEl = document.getElementById('talukBoundaryBadge');
+  const nameEl = document.getElementById('talukBoundaryName');
+
+  // If outside Karnataka, remove boundary and hide badge
+  if (isKarnataka === false) {
+    if (talukBoundaryLayer) {
+      try { radarMap.removeLayer(talukBoundaryLayer); } catch (e) {}
+      talukBoundaryLayer = null;
+    }
+    if (badgeEl) badgeEl.style.display = 'none';
+    return;
+  }
+
+  const data = await loadTaluksGeoJson();
+  if (!data || !data.features || !data.features.length) return;
+
+  const locClean = (locationName || '').toLowerCase().trim();
+  const rawParts = locClean.split(/[\s,&(]+/);
+  const aliasTarget = TALUK_ALIASES[rawParts[0]] || TALUK_ALIASES[locClean] || null;
+
+  // 1. Try Name / Alias Match First
+  let matched = null;
+  if (aliasTarget) {
+    matched = data.features.find(f => (f.properties.taluk || '').toLowerCase() === aliasTarget.toLowerCase());
+  }
+
+  if (!matched && locClean) {
+    matched = data.features.find(f => {
+      const t = (f.properties.taluk || '').toLowerCase();
+      return locClean.includes(t) || t.includes(rawParts[0]);
+    });
+  }
+
+  // 2. High-precision Point-in-Polygon Search (Matches any village, town, or GPS coordinate to its exact parent Taluk)
+  if (!matched && lat && lon) {
+    matched = data.features.find(f => isPointInGeometry(lat, lon, f.geometry));
+  }
+
+  // Remove previous taluk boundary layer cleanly
+  if (talukBoundaryLayer) {
+    try { radarMap.removeLayer(talukBoundaryLayer); } catch (e) {}
+    talukBoundaryLayer = null;
+  }
+
+  if (matched) {
+    const talukName = matched.properties.taluk;
+    const districtName = matched.properties.district || 'Karnataka';
+
+    talukBoundaryLayer = L.geoJSON(matched, {
+      style: {
+        color: '#e05a36',
+        weight: 3.2,
+        opacity: 0.95,
+        dashArray: '6, 8',
+        lineCap: 'round',
+        lineJoin: 'round',
+        fillColor: '#e05a36',
+        fillOpacity: 0.08
+      }
+    }).addTo(radarMap);
+
+    // Keep boundary line below radar blips & station chips
+    if (talukBoundaryLayer) talukBoundaryLayer.bringToBack();
+    if (tileLayer) tileLayer.bringToBack();
+    if (stationMarkersGroup) stationMarkersGroup.bringToFront();
+
+    // Hover tooltip showing taluk name and district
+    talukBoundaryLayer.bindTooltip(`
+      <div style="font-family: inherit; font-size: 0.8rem; line-height: 1.35; padding: 2px;">
+        <strong>📍 ${talukName} Taluk Border</strong><br>
+        <span style="color: #666; font-size: 0.72rem;">${districtName} District</span>
+      </div>
+    `, { sticky: true, className: 'taluk-boundary-tooltip' });
+
+    // Interactive hover feedback
+    talukBoundaryLayer.on('mouseover', function(e) {
+      if (e.layer) {
+        e.layer.setStyle({
+          weight: 4.5,
+          opacity: 1.0,
+          fillOpacity: 0.14
+        });
+      }
+    });
+    talukBoundaryLayer.on('mouseout', function(e) {
+      if (talukBoundaryLayer && e.layer) {
+        talukBoundaryLayer.resetStyle(e.layer);
+      }
+    });
+
+    // Update Top Taluk Badge in Radar Header
+    if (badgeEl && nameEl) {
+      badgeEl.style.display = 'inline-flex';
+      nameEl.textContent = `${talukName} Taluk`;
+    }
+  } else {
+    if (badgeEl) badgeEl.style.display = 'none';
+  }
+}
+
+
 /**
  * Update Radar Layer with Range Rings, dBZ Reflectivity Contours & Stations
  */
@@ -307,6 +499,9 @@ function updateRadarMap(lat, lon, locationName, probability, microZones, isKarna
   if (stationMarkersGroup) stationMarkersGroup.clearLayers();
   microzoneMarkersMap = {};
   mainFocalMarker = null;
+
+  // Render exact administrative Taluk border line
+  updateTalukBoundary(lat, lon, locationName, isKarnataka);
 
   const hasProb = isKarnataka && (probability !== null && probability !== undefined);
   const prob = hasProb ? parseFloat(probability) : 0;
@@ -422,6 +617,9 @@ function focusMicrozoneOnMap(idx, zone, data) {
 
   const targetLat = zone._mapLat || zone.lat || (data && data.latitude) || currentRadarCenter[0];
   const targetLon = zone._mapLon || zone.lon || (data && data.longitude) || currentRadarCenter[1];
+
+  // Dynamically ensure taluk boundary is outlined for focused microzone/taluk
+  updateTalukBoundary(targetLat, targetLon, zone.name, true);
 
   // Visual active card indication in the sub-zones list
   document.querySelectorAll('.place-item-card.active').forEach(el => el.classList.remove('active'));

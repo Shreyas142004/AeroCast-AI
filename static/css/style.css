@@ -895,6 +895,34 @@ body {
   border-radius: 12px;
 }
 
+.taluk-boundary-tag {
+  background: rgba(224, 90, 54, 0.12) !important;
+  color: var(--accent-terracotta) !important;
+  border: 1px solid rgba(224, 90, 54, 0.28) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  cursor: default;
+  transition: all 0.25s ease;
+}
+
+.taluk-boundary-tooltip {
+  background: var(--card-bg, #ffffff) !important;
+  color: var(--text-primary, #1e293b) !important;
+  border: 1.5px solid var(--accent-terracotta, #e05a36) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+  font-family: inherit !important;
+  font-size: 0.8rem !important;
+  padding: 5px 9px !important;
+  line-height: 1.35 !important;
+}
+
+.taluk-boundary-tooltip::before {
+  border-top-color: var(--accent-terracotta, #e05a36) !important;
+}
+
 .radar-live-blip {
   display: inline-block;
   width: 7px;
