@@ -1,41 +1,89 @@
 # ⚡ AeroCast AI — Convective Weather & Thunderstorm Nowcasting System for Karnataka
 
-> **An intelligent, physics-informed nowcasting platform engineered for real-time thunderstorm and lightning prediction within a 0 to 90-minute window (+30m, +60m, +90m), combining atmospheric thermodynamics, a 27-year regional climatology, and Google Gemini Generative AI across Karnataka, India.**
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Flask 3.0](https://img.shields.io/badge/Flask-3.0%2B-lightgrey.svg)](https://palletsprojects.com/p/flask/)
+[![MongoDB Atlas](https://img.shields.io/badge/Database-MongoDB%20Atlas-green.svg)](https://www.mongodb.com/atlas)
+[![Ensemble Accuracy](https://img.shields.io/badge/Ensemble%20Accuracy-91.24%25-brightgreen.svg)](#-machine-learning-pipeline--evaluation)
+[![Google Gemini AI](https://img.shields.io/badge/Generative%20AI-Google%20Gemini-orange.svg)](https://ai.google.dev/)
+[![CARTO Basemaps](https://img.shields.io/badge/Maps-CARTO%20Voyager%20GIS-blueviolet.svg)](https://carto.com/)
+[![Telegram Bot](https://img.shields.io/badge/Alerts-Telegram%20Bot%20API-0088cc.svg)](#-multi-channel-emergency-alert-system)
+
+> **An intelligent, physics-informed nowcasting platform engineered for high-precision thunderstorm and lightning prediction within a 0 to 90-minute window (+30m, +60m, +90m). Combines atmospheric thermodynamics, a 27-year regional climatology, soft-voting gradient boosted ensembles, CARTO GIS cartography with 176 Karnataka taluk boundaries, Google Gemini Generative AI, and multi-channel autonomous alert broadcasts (Email & Telegram).**
 
 ---
 
 ## 📌 Project Overview
 
-Tropical thunderstorms, cloud-to-ground lightning discharges, and localized downbursts inflict severe damage across Karnataka, particularly in the Western Ghats and coastal belt (Dakshina Kannada, Udupi, Kodagu, Chikkamagaluru, and Shivamogga). 
+Tropical thunderstorms, cloud-to-ground lightning discharges, and localized downbursts inflict severe hazards across Karnataka, especially along the Western Ghats orographic barrier and the coastal belt (Dakshina Kannada, Udupi, Uttara Kannada, Kodagu, Chikkamagaluru, and Shivamogga).
 
-Conventional Numerical Weather Prediction (NWP) models (GFS/ECMWF) update only every 3 to 6 hours on coarse grids, failing to resolve rapid convective storm cells igniting and striking within 30 to 60 minutes. Furthermore, standard machine learning models frequently trigger **nocturnal false alarms** in coastal valleys due to high nighttime relative humidity ($>90\%$).
+Conventional Numerical Weather Prediction (NWP) models (such as GFS and ECMWF) update only on 3 to 6-hour cycles over coarse spatial grids ($9\text{–}25\text{ km}$), failing to resolve rapid convective initiation occurring within a 30 to 60-minute window. Furthermore, standard machine learning models commonly trigger **nocturnal false alarms** in coastal river valleys due to high nighttime relative humidity ($>90\%$) despite calm, stable atmospheric conditions.
 
-**AeroCast AI** overcomes these challenges by unifying:
-1. **Live High-Resolution Atmospheric Telemetry** (Open-Meteo & Visual Crossing fallback).
-2. **62-Feature Atmospheric Physics Engine** (Dew Point Depression, Vapor Pressure Deficit, and Diurnal Solar Insolation Weighting).
-3. **27-Year Karnataka Historical Climatology** ($9,862$ verified daily observations from 2000 to 2027).
-4. **Soft-Voting GBDT Ensemble Core** (LightGBM, XGBoost, and HistGradientBoosting) achieving **91.24% Holdout Accuracy**.
-5. **Authoritative 30,753-Village Boundary Engine** (`karnataka_places.py` indexing all 31 districts, 240 taluks, and 30,753 villages).
-6. **Google Gemini Generative AI** translating numerical distributions into plain-language synoptic advisories for agriculture, transit, and public safety.
-7. **Interactive S-Band Doppler Radar Canvas** with concentric range rings ($25\text{ km}$, $50\text{ km}$, $100\text{ km}$).
+**AeroCast AI** overcomes these limitations by unifying:
+1. **Live High-Resolution Atmospheric Telemetry** (Dual-source: Open-Meteo & Visual Crossing fallback).
+2. **62-Feature Atmospheric Physics Engine** (Dew Point Depression, Vapor Pressure Deficit, Theta-e, and Diurnal Solar Insolation Weighting).
+3. **27-Year Karnataka Historical Climatology** ($9,862$ verified daily observation records from 2000 to 2027).
+4. **Soft-Voting GBDT Ensemble Core** (LightGBM, XGBoost, and HistGradientBoosting) achieving **91.24% Holdout Accuracy** and **0.9723 ROC-AUC**.
+5. **Interactive CARTO GIS Doppler Radar** with licensed CARTO Voyager vector basemaps, range rings ($25\text{ km}$, $50\text{ km}$, $100\text{ km}$), and simulated reflectivity contours.
+6. **176 Karnataka Administrative Taluk Boundary Polygon Engine** with real-time client-side Ray-Casting Point-in-Polygon detection.
+7. **Authoritative 30,753-Village Boundary Engine** (`karnataka_places.py` indexing all 31 districts, 240 taluks, and 30,753 villages with strict state geofencing).
+8. **Autonomous Background Thunderstorm Monitoring Service** daemon that continuously monitors user localities every 2 minutes and auto-broadcasts warnings.
+9. **Multi-Channel Emergency Alert Dispatcher** broadcasting real-time alerts via Email (HTML cards), Telegram Bot (@aerocast_alerts_bot), and SMS.
+10. **Google Gemini Generative AI** synthesizing plain-language synoptic advisories for agriculture, transit, and public safety.
 
 ---
 
 ## 🌟 Key Capabilities & Features
 
-* **⚡ 0 to 90-Minute Nowcasting**: Delivers calibrated storm and lightning risk probabilities for immediate frontline decision support.
-* **⏱️ 3-Step Dynamic Timeline Progression**: Real-time convective hazard projection cards at **+30m**, **+60m**, and **+90m** horizons with dynamic risk-colored theming:
-  - 🟢 **Low / No Risk** ($<35\%$): Fair Weather / Clear Sky
-  - 🟡 **Moderate Watch** ($35\% - 69.9\%$): Convective Initiation / Thunderstorm Watch
-  - 🔴 **Critical Alert** ($\ge 70\%$): Severe Thunderstorm / Downburst / Lightning Warning
-* **🚫 Zero Nocturnal False Alarms**: Uses continuous boundary-layer saturation metrics (Dew Point Depression $\text{DPD} = T - T_d$ and Vapor Pressure Deficit $\text{VPD}$) modulated by local diurnal solar heating ($D_f$) to prevent false warnings during calm, high-humidity nighttime hours.
-* **🗺️ Interactive Leaflet S-Band Doppler Radar**: Renders interactive radar sweeps with concentric range rings ($25\text{ km}$, $50\text{ km}$, $100\text{ km}$) and simulated reflectivity echo contours.
-* **📍 Authoritative Karnataka Boundary Lock**: Powered by `processed_data/karnataka_villages.csv` (30,753 villages, 240 mandals, 31 districts). Queries outside Karnataka (e.g., Goa, Sikkim, Andhra Pradesh, Mumbai) are strictly geo-fenced — the map flies to their real geographical position, predictions and telemetry are disabled, and a prominent warning alert is displayed.
-* **🌾 Sector-Specific Generative Advisories**: Google Gemini AI synthesizes plain-language guidance:
+### ⚡ 1. 0 to 90-Minute Nowcasting & 3-Step Dynamic Timeline
+- Calibrated convective risk percentages delivered for frontline decision support.
+- Dynamic timeline progression cards at **+30m**, **+60m**, and **+90m** horizons with color-coded risk levels:
+  - 🟢 **Low / Fair Weather** ($<35\%$): Clear skies, stable atmosphere.
+  - 🟡 **Moderate Watch** ($35\% - 69.9\%$): Convective initiation, towering cumulus growth.
+  - 🔴 **Critical Alert** ($\ge 70\%$): Severe thunderstorm, cloud-to-ground lightning, violent downbursts.
+
+### 🚫 2. Zero Nocturnal False Alarms
+- Leverages continuous boundary-layer saturation metrics:
+  - **Dew Point Depression** ($\text{DPD} = T - T_d$)
+  - **Vapor Pressure Deficit** ($\text{VPD}$) calculated via the Magnus-Tetens formulation.
+- Modulated by a regional **Diurnal Solar Insolation Factor** ($D_f(h)$) and Bayesian Climatological Priors, suppressing false nocturnal alarms during calm, high-humidity nights in coastal river valleys (e.g., Puttur, Bantwal, Sullia).
+
+### 🌡️ 3. Accurate Apparent ("Feels Like") Temperature
+- Replaced naive offset approximations with genuine meteorological thermodynamic apparent temperature from live soundings (incorporating air temperature, relative humidity, wind speed, and vapor pressure).
+
+### 🗺️ 4. Interactive S-Band Doppler Radar with CARTO Basemaps
+- **CARTO Voyager Basemaps**: Integrated official CARTO Basemaps API key to deliver watermark-free, high-DPI vector tiles without 403 access blocks.
+- **Esri World Street Map Failover**: Automatic fallback to Esri tiles in case of network disruptions.
+- **Doppler Sweep Canvas**: Concentric radar range rings ($25\text{ km}$, $50\text{ km}$, $100\text{ km}$) with simulated convective reflectivity echoes ($15\text{–}65\text{ dBZ}$).
+
+### 📐 5. 176 Karnataka Administrative Taluk Boundary Polygon Engine
+- Features an optimized vector GeoJSON (`static/data/karnataka_taluks.geojson`) covering 176 sub-districts/taluks across Karnataka.
+- **Client-Side Ray-Casting Point-in-Polygon (PIP)**: Instantly resolves the parent taluk boundary for any searched village, town, or GPS coordinate.
+- **Terracotta Dashed Outline (`#e05a36`)**: Highlights the exact taluk boundary polygon on the Leaflet radar map with smooth bounding-box zoom.
+- **Administrative Header Badge**: Displays the verified taluk and district name directly in the radar toolbar.
+
+### 📍 6. Authoritative Karnataka Boundary Fencing & Coordinate Precision
+- Backed by `processed_data/karnataka_villages.csv` (30,753 villages, 240 taluks, 31 districts).
+- **Coastal Clamping**: Micro-zone coordinates (such as Bantwal and Hampankatta) are clamped strictly onshore ($\ge 74.82^\circ\text{E}$), eliminating sea/ocean coordinate drift.
+- **Geofence Enforcement**: Locations outside Karnataka (e.g., Goa, Kerala, Andhra Pradesh, Mumbai) are smoothly navigated to on the map while predictions and telemetry are disabled with a clear out-of-bounds warning.
+
+### 🤖 7. Autonomous Background Thunderstorm Monitoring Service
+- A background daemon thread runs continuously within `app.py`, sampling weather telemetry across registered citizens' localities every 2 minutes.
+- When convective initiation or severe thunderstorm cells ($\ge 65\%$ probability or active METAR codes) are identified, the daemon automatically triggers and broadcasts emergency alerts without requiring any manual user interaction.
+
+### 📢 8. Multi-Channel Emergency Alert System
+- **Telegram Bot API**: Instant push notifications via `@aerocast_alerts_bot` with rich Markdown formatting, emergency safety guidelines, and one-click dashboard links.
+- **Email Alerts**: HTML-formatted emergency alert bulletins delivered via SMTP.
+- **SMS Alerts**: Frontline emergency SMS dispatch via Twilio.
+- **In-Memory Alert Session History**: Dispatches alerts directly to subscribers without unnecessarily bloating the database with notification records.
+
+### 🌾 9. Sector-Specific Generative Advisories (Google Gemini)
+- Generates natural-language operational guidance tailored to Karnataka's socio-economic landscape:
   - **Plantation & Agriculture**: Areca nut drying, pepper harvest, and rubber tapping precautions.
-  - **Travel & Highway Safety**: Ghat road slickness, visibility drops, and valley downdrafts.
-  - **Aviation & Outdoors**: Lightning strike hazards and outdoor safety protocols.
-* **🎨 Dual Theme Design System**: Handcrafted responsive UI supporting **Warm Beige** (Light) and **Roasted Espresso** (Dark) themes.
+  - **Travel & Ghat Road Safety**: Charmadi, Shiradi, Agumbe, and Sampaje ghat road slickness, visibility drops, and flash flooding risks.
+  - **Aviation & Outdoors**: Ground lightning hazard protocols and structural shelter advisories.
+
+### 🎨 10. Dual-Theme Design System
+- Handcrafted responsive UI supporting **Warm Beige** (Light) and **Roasted Espresso** (Dark) themes with custom glassmorphism styling.
 
 ---
 
@@ -44,31 +92,37 @@ Conventional Numerical Weather Prediction (NWP) models (GFS/ECMWF) update only e
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    1. PRESENTATION LAYER (USER DASHBOARD)               │
-│  - Interactive S-Band Doppler Radar (Leaflet.js Range Rings 25-100 km) │
-│  - Convective Risk Dial & Timeline Cards (+30m / +60m / +90m)           │
-│  - Taluk Micro-Zones & Gemini Sector Advisories (Agri, Transit, Public) │
+│  - CARTO Voyager GIS Basemaps + Esri Failover                           │
+│  - Interactive S-Band Doppler Radar (Range Rings 25 - 100 km)          │
+│  - 176 Karnataka Taluk Boundary Polygon Engine (Ray-Casting PIP)        │
+│  - Convective Risk Dial & Dynamic Timeline Cards (+30m / +60m / +90m)   │
+│  - Gemini Sector Advisories (Agriculture, Ghat Transit, Public Safety)  │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │ HTTPS / REST Requests
 ┌────────────────────────────────────▼────────────────────────────────────┐
 │              2. GATEWAY & BOUNDARY VALIDATION LAYER (FLASK)             │
 │  - Flask 3.0+ REST Gateway (Request Routing, CORS & In-Memory Cache)    │
 │  - Karnataka State Boundary Validator (11.5°N–18.6°N, 74.0°E–78.6°E)     │
+│  - In-Memory Alert Dispatch Throttle & Session State Manager            │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │ Dispatches Validated Queries
 ┌────────────────────────────────────▼────────────────────────────────────┐
 │                    3. CORE SERVICES & AI INFERENCE ENGINE               │
-│  - Ingestion: Open-Meteo High-Resolution Telemetry & Live Soundings     │
+│  - Dual Ingestion: Open-Meteo High-Resolution Telemetry & Live Soundings│
 │  - Physics Engine: 62 Atmospheric Features (DPD, VPD, Df Factor, Theta) │
 │  - ML Classifier: Soft-Voting GBDT Ensemble (LightGBM + XGBoost + HGB)  │
-│  - Generative AI: Google Gemini Cloud LLM (Synoptic Advisory Synthesis) │
+│  - Autonomous Monitor Daemon: 2-minute cycle background weather scanner │
+│  - Google Gemini Cloud LLM: Synoptic Sector Advisory Synthesis          │
+│  - Multi-Channel Dispatcher: Telegram Bot API, SMTP Email, Twilio SMS   │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │ Reads / Serializes
 ┌────────────────────────────────────▼────────────────────────────────────┐
 │                             4. STORAGE LAYER                            │
+│  - MongoDB Atlas Cloud Database (Users, Auth, Preferences, Alerts)      │
 │  - 27-Year Karnataka Climate Dataset (9,862 verified daily records)     │
 │  - 30,753 Karnataka Villages & Taluks LGD Census Repository (CSV)       │
+│  - 176 Karnataka Sub-District Boundary Polygons (GeoJSON)               │
 │  - Serialized Trained Models Repository (best_convective_model.joblib)  │
-│  - Geospatial GeoJSON Boundaries & Telemetry Response Cache             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -78,27 +132,28 @@ Conventional Numerical Weather Prediction (NWP) models (GFS/ECMWF) update only e
 
 ```text
 AeroCast-AI/
-├── app.py                          # Flask REST API Web Server & Nowcasting Endpoints
-├── config.py                       # Global configuration & environment loader
-├── db.py                           # SQLite Database Manager & User Authentication
+├── app.py                          # Flask REST API Web Server, Routes & Autonomous Daemon
+├── config.py                       # Global configuration, path resolutions & environment loader
+├── db.py                           # MongoDB Atlas Database Manager, Auth & Active Alerts
 ├── karnataka_places.py             # 30,753 Villages Index & State Boundary Validation Engine
 ├── gemini_nowcast.py               # Google Gemini Generative AI Advisory Engine
-├── predict_live.py                 # Live Meteorological Telemetry Fetcher & ML Pipeline
+├── predict_live.py                 # Live Telemetry Ingestion, Physics Transforms & ML Pipeline
 ├── preprocess_features.py          # 62-Feature Physics Engineering Pipeline
 ├── train_models.py                 # GBDT Model Benchmarking & Serialization Script
-├── requirements.txt                # Python Dependencies & Environment Specifications
+├── requirements.txt                # Python Dependencies & Production Specifications
 ├── README.md                       # Comprehensive Project Documentation
-├── .env                            # API Keys & Local Configuration
+├── .env                            # API Keys & Local Configuration (Git-ignored)
 ├── .gitignore                      # Git tracking exclusions
 │
 ├── dataset/
 │   └── karnataka_dataset.xlsx      # 27-Year Karnataka Meteorological Records (2000–2027)
 │
 ├── notifications/
+│   ├── __init__.py                 # Notification package exports
 │   ├── dispatcher.py               # Multi-channel Alert Dispatcher (Email, SMS, Telegram)
-│   ├── email_service.py            # SMTP Email Alert Service
+│   ├── email_service.py            # SMTP Email Alert Service with HTML templates
 │   ├── sms_service.py              # Twilio SMS Alert Service
-│   └── telegram_service.py         # Telegram Bot Alert Service
+│   └── telegram_service.py         # Telegram Bot API Service (@aerocast_alerts_bot)
 │
 ├── processed_data/
 │   ├── karnataka_convective_features.csv # Cleaned & Processed 62-Feature Matrix
@@ -112,12 +167,15 @@ AeroCast-AI/
 ├── static/
 │   ├── css/
 │   │   └── style.css               # Warm Beige (Light) & Roasted Espresso (Dark) Theme Tokens
+│   ├── data/
+│   │   └── karnataka_taluks.geojson# 176 Karnataka Administrative Taluk Boundary Polygons
 │   ├── js/
-│   │   ├── app.js                  # Frontend Telemetry, Doppler Radar & UI Interactivity
+│   │   ├── app.js                  # Frontend Telemetry, Doppler Radar, Taluk PIP & UI Engine
 │   │   └── alerts_listener.js      # Real-time WebSocket / Polling Alert Notifications
 │   └── vendor/
 │       ├── leaflet.css             # Leaflet GIS Mapping Stylesheet
-│       └── leaflet.js              # Leaflet GIS Interactive Mapping Engine
+│       ├── leaflet.js              # Leaflet GIS Interactive Mapping Engine
+│       └── leaflet.js.map          # Leaflet source maps
 │
 └── templates/
     ├── index.html                  # Responsive Convective Weather Dashboard Template
@@ -133,7 +191,7 @@ AeroCast-AI/
 
 ## 📊 Machine Learning Pipeline & Evaluation
 
-The predictive engine was benchmarked on a **70% Training / 30% Testing** chronological split across the 27-year Karnataka climatological dataset:
+The predictive engine was benchmarked on a **70% Training / 30% Testing** chronological split across the 27-year Karnataka climatological dataset ($9,862$ daily observation records):
 - **Training Set (70% | 2000–2018)**: 6,568 historical daily observation records.
 - **Holdout Test Set (30% | 2019–2027)**: 3,287 historical daily observation records.
 
@@ -156,7 +214,7 @@ The predictive engine was benchmarked on a **70% Training / 30% Testing** chrono
 
 ### 1. Dew Point Depression (DPD)
 $$\text{DPD} = T - T_d$$
-where $T$ is dry-bulb surface temperature ($^\circ\text{C}$) and $T_d$ is dew point temperature ($^\circ\text{C}$). A $\text{DPD} < 3^\circ\text{C}$ indicates near-surface saturation.
+where $T$ is dry-bulb surface temperature ($^\circ\text{C}$) and $T_d$ is dew point temperature ($^\circ\text{C}$). A $\text{DPD} < 3^\circ\text{C}$ indicates near-surface moisture saturation.
 
 ### 2. Vapor Pressure Deficit (VPD)
 Using the Magnus-Tetens formulation for saturation vapor pressure ($e_s$) and actual vapor pressure ($e$):
@@ -179,51 +237,158 @@ $$P_{\text{fused}} = 0.35 \times P_{\text{base}}(m) + 0.65 \times (E_{\text{conv
 
 ---
 
-## 🚀 Setup & Execution Guide
+## 🌐 Deployment & Hosting Guide
+
+AeroCast AI combines Flask, serialized Gradient Boosted Decision Tree models (LightGBM & XGBoost), MongoDB Atlas persistence, and a background daemon thread. Follow the instructions below to deploy on **Render** (recommended) or configure with **MongoDB Atlas**.
+
+### 🍃 Option A: MongoDB Atlas Cloud Setup (Required for Production)
+
+1. **Create an Account & Cluster**:
+   - Go to [MongoDB Atlas](https://www.mongodb.com/atlas) and sign up/log in.
+   - Click **Create a Deployment** and select the **M0 Free Tier** (AWS or GCP, choose Mumbai `ap-south-1` for lowest latency to Karnataka).
+2. **Create a Database User**:
+   - Navigate to **Security** → **Database Access** → **Add New Database User**.
+   - Select **Password Authentication**, enter a username (e.g. `aerocast_admin`) and a secure password.
+   - Assign the **Read and write to any database** privilege.
+3. **Configure Network Access**:
+   - Navigate to **Security** → **Network Access** → **Add IP Address**.
+   - Choose **Allow Access from Anywhere** (`0.0.0.0/0`) so that hosting providers (Render, Vercel) can connect reliably.
+4. **Obtain Connection String**:
+   - Navigate to **Databases** → Click **Connect** on your cluster → Choose **Drivers (Python)**.
+   - Copy the URI, which looks like:
+     ```text
+     mongodb+srv://aerocast_admin:<password>@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+     ```
+   - In your `.env` or Render environment settings, set:
+     ```env
+     MONGODB_URI=mongodb+srv://aerocast_admin:<password>@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority
+     MONGODB_DB=aerocast_db
+     ```
+
+---
+
+### 🚀 Option B: Deploying on Render (Recommended)
+
+Render provides persistent Python containers ideal for running Flask, Gunicorn, machine learning libraries (`lightgbm`, `xgboost`), and background threads without serverless timeout constraints.
+
+1. **Push your code to GitHub**:
+   Ensure all changes are pushed to your GitHub repository.
+2. **Create a New Web Service on Render**:
+   - Log into [Render Dashboard](https://dashboard.render.com/).
+   - Click **New +** → **Web Service**.
+   - Connect your GitHub repository (`AeroCast-AI`).
+3. **Configure Service Settings**:
+   - **Name**: `aerocast-ai`
+   - **Region**: Singapore or Frankfurt
+   - **Branch**: `main`
+   - **Runtime**: `Python 3`
+   - **Build Command**:
+     ```bash
+     pip install --upgrade pip && pip install -r requirements.txt
+     ```
+   - **Start Command**:
+     ```bash
+     gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+     ```
+4. **Set Environment Variables in Render**:
+   Navigate to the **Environment** tab in your Render service and add:
+   - `MONGODB_URI` = `mongodb+srv://aerocast_admin:your_password@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority`
+   - `MONGODB_DB` = `aerocast_db`
+   - `SECRET_KEY` = `<generate-a-strong-random-secret-key>`
+   - `GEMINI_API_KEY` = `<your-google-gemini-api-key>`
+   - `TELEGRAM_BOT_TOKEN` = `<your-telegram-bot-token>` (Optional)
+   - `MAIL_USERNAME` = `<your-smtp-email>` (Optional)
+   - `MAIL_PASSWORD` = `<your-smtp-app-password>` (Optional)
+5. **Deploy**:
+   Click **Create Web Service**. Render will automatically clone the repository, install dependencies, load the serialized models, start the background monitor daemon, and provide a public HTTPS URL (e.g., `https://aerocast-ai.onrender.com`).
+
+---
+
+### ⚡ Option C: Notes on Vercel Hosting
+
+If deploying on Vercel:
+- Vercel is designed for **stateless serverless functions** with execution time limits (10–15s on Hobby tier) and memory caps (1024 MB).
+- While a lightweight Flask API can be deployed via `vercel.json` (pointing to `app.py`), the heavy GBDT ensemble (`lightgbm`, `xgboost`, `scikit-learn`) and the continuous background daemon thread (`background_thunderstorm_monitor_daemon`) will not persist across serverless invocations.
+- **Recommendation**: Deploy the full-stack Flask application on **Render** (or Railway/AWS EC2) for continuous background monitoring and fast, warm ML inferences.
+
+---
+
+## 🛠️ Configuration & Environment Variables
+
+Create a `.env` file in the project root directory or supply these keys in your cloud hosting provider:
+
+| Variable | Required | Description | Example / Default |
+| :--- | :---: | :--- | :--- |
+| `MONGODB_URI` | **Yes** | MongoDB Atlas or local connection string | `mongodb+srv://...` or `mongodb://localhost:27017/` |
+| `MONGODB_DB` | No | Database name in MongoDB | `aerocast_db` |
+| `SECRET_KEY` | **Yes** | Flask session signing secret key | `<random-32-char-string>` |
+| `GEMINI_API_KEY` | Optional | Google Gemini Generative AI Key for Synoptic Advisories | `AIzaSy...` |
+| `VISUAL_CROSSING_API_KEY` | Optional | Secondary fallback meteorological API | `YOUR_VC_KEY` |
+| `TELEGRAM_BOT_TOKEN` | Optional | Telegram Bot token for push notifications | `123456789:ABCdef...` |
+| `TELEGRAM_CHAT_ID` | Optional | Default/broadcasting Telegram chat IDs (comma-separated) | `987654321` |
+| `MAIL_SERVER` | Optional | SMTP Mail server for email alerts | `smtp.gmail.com` |
+| `MAIL_PORT` | Optional | SMTP Port (SSL/TLS) | `465` (SSL) or `587` (TLS) |
+| `MAIL_USERNAME` | Optional | SMTP Sender email address | `alerts@aerocast.ai` |
+| `MAIL_PASSWORD` | Optional | SMTP App-specific password | `xxxx xxxx xxxx xxxx` |
+| `TWILIO_ACCOUNT_SID` | Optional | Twilio account identifier for SMS dispatch | `AC...` |
+| `TWILIO_AUTH_TOKEN` | Optional | Twilio authentication token | `...` |
+| `TWILIO_PHONE_NUMBER` | Optional | Twilio registered sender phone number | `+1...` |
+
+---
+
+## 🚀 Setup & Local Execution Guide
 
 ### 1. Prerequisites
 - Python 3.10 or higher.
-- Modern web browser (Chrome, Edge, Firefox) with WebGL enabled.
+- Modern web browser (Chrome, Edge, Firefox, Brave) with WebGL enabled.
+- Local MongoDB instance or MongoDB Atlas connection string.
 
 ### 2. Installation
-Clone the repository and install required Python dependencies:
+Clone the repository and install dependencies:
 ```bash
-git clone https://github.com/your-username/AeroCast-AI.git
+git clone https://github.com/Shreyas142004/AeroCast-AI.git
 cd AeroCast-AI
 pip install -r requirements.txt
 ```
-*(Dependencies: `flask`, `pandas`, `numpy`, `scikit-learn`, `lightgbm`, `xgboost`, `joblib`, `openpyxl`)*
 
 ### 3. Environment Configuration
 Create a `.env` file in the project root:
 ```env
+MONGODB_URI=mongodb://localhost:27017/
+MONGODB_DB=aerocast_db
+SECRET_KEY=aerocast-ai-local-development-secret-key-2026
 GEMINI_API_KEY=your_google_gemini_api_key_here
-VISUAL_CROSSING_API_KEY=your_visual_crossing_key_here  # Optional fallback
 ```
 
-### 4. Train / Re-evaluate Models
+### 4. Train / Re-evaluate Models (Optional)
+The pre-trained 91.24% Soft Voting Ensemble is already included in `models/best_convective_model.joblib`. To retrain from scratch:
 ```bash
-python preprocess_features.py  # Generates 62-feature dataset
+python preprocess_features.py  # Generates 62-feature atmospheric dataset
 python train_models.py         # Trains and benchmarks GBDT ensemble
 ```
 
-### 5. Launch Real-Time Nowcasting Web Server
+### 5. Launch the Server
 ```bash
 python app.py
 ```
 Open **`http://127.0.0.1:5000`** in your browser.
 
+- Default evaluator login (seeded automatically on startup):
+  - **Email**: `evaluator@aerocast.ai`
+  - **Password**: `aerocast2026`
+
 ---
 
 ## 🧪 Verification & Out-of-Bounds Testing
 
-The system was rigorously evaluated across Karnataka microclimates and out-of-state test queries:
+The platform has been validated across diverse Karnataka microclimates and out-of-state benchmark queries:
 
 | Test Query | Region / State | Boundary Status | Coordinates | Probability Output | Dashboard Behavior |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **Puttur** | Dakshina Kannada, KA | ✅ Inside KA | `12.7667°N, 75.2016°E` | `28.5%` (Low Risk) | Full Live Weather, Timeline & S-Band Radar active |
-| **Bengaluru** | Bengaluru Urban, KA | ✅ Inside KA | `12.9716°N, 77.5946°E` | `18.5%` (Low Risk) | Live Telemetry & Sector Advisories active |
-| **108 Kalthur** | Udupi, KA | ✅ Inside KA | `13.2248°N, 74.7431°E` | `75.2%` (Critical) | High Convective Alert with dynamic Red styling |
+| **Puttur** | Dakshina Kannada, KA | ✅ Inside KA | `12.7667°N, 75.2016°E` | `28.5%` (Low Risk) | Full Live Weather, Timeline, Taluk Outline & S-Band Radar active |
+| **Bantwal** | Dakshina Kannada, KA | ✅ Inside KA | `12.8698°N, 74.8430°E` | `22.4%` (Low Risk) | Onshore clamped coordinate, full taluk boundary highlighted |
+| **Hampankatta** | Mangaluru, KA | ✅ Inside KA | `12.8698°N, 74.8430°E` | `25.1%` (Low Risk) | Accurately located in city center, full radar sweep active |
+| **Bengaluru** | Bengaluru Urban, KA | ✅ Inside KA | `12.9716°N, 77.5946°E` | `18.5%` (Low Risk) | Live Telemetry, Bangalore Taluk boundary & Sector Advisories |
 | **Goa** | Goa State | ❌ Outside KA | `15.2993°N, 74.1240°E` | `N/A (Disabled)` | Map flies to Goa, weather hidden, warning banner displayed |
 | **Sikkim** | Sikkim State | ❌ Outside KA | `27.5330°N, 88.5122°E` | `N/A (Disabled)` | Map flies to Sikkim, predictions locked |
 | **Andhra Pradesh** | Andhra Pradesh State | ❌ Outside KA | `15.9129°N, 79.7400°E` | `N/A (Disabled)` | Map flies to AP, predictions locked |
@@ -232,4 +397,4 @@ The system was rigorously evaluated across Karnataka microclimates and out-of-st
 ---
 
 ## 📜 License
-This project is developed for academic and disaster-preparedness research purposes.
+This project is developed for academic, meteorological, and disaster-preparedness research purposes.
