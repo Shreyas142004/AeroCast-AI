@@ -19,6 +19,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 # pyrefly: ignore[missing-import]
 from werkzeug.security import generate_password_hash, check_password_hash
+import config  # Ensures .env is loaded into os.environ
 
 # MongoDB Configuration
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
@@ -33,8 +34,10 @@ def get_db() -> Database:
     global _client, _db
     if _db is None:
         try:
-            _client = pymongo.MongoClient(MONGODB_URI, serverSelectionTimeoutMS=3000)
-            _db = _client[MONGODB_DB_NAME]
+            uri = os.getenv("MONGODB_URI", MONGODB_URI)
+            db_name = os.getenv("MONGODB_DB", MONGODB_DB_NAME)
+            _client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=3000)
+            _db = _client[db_name]
             # Ensure unique constraints on email and mobile
             _db.users.create_index("email", unique=True)
             _db.users.create_index("mobile", unique=True)
