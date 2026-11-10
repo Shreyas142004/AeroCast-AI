@@ -1,4 +1,4 @@
-# ⚡ AeroCast AI — Convective Weather & Thunderstorm Nowcasting System for Karnataka
+# ⚡ AeroCast-AI : Thunderstorm & Lightning Nowcasting System for Karnataka
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask 3.0](https://img.shields.io/badge/Flask-3.0%2B-lightgrey.svg)](https://palletsprojects.com/p/flask/)
@@ -18,7 +18,7 @@ Tropical thunderstorms, cloud-to-ground lightning discharges, and localized down
 
 Conventional Numerical Weather Prediction (NWP) models (such as GFS and ECMWF) update only on 3 to 6-hour cycles over coarse spatial grids ($9\text{–}25\text{ km}$), failing to resolve rapid convective initiation occurring within a 30 to 60-minute window. Furthermore, standard machine learning models commonly trigger **nocturnal false alarms** in coastal river valleys due to high nighttime relative humidity ($>90\%$) despite calm, stable atmospheric conditions.
 
-**AeroCast AI** overcomes these limitations by unifying:
+**AeroCast-AI** overcomes these limitations by unifying:
 1. **Live High-Resolution Atmospheric Telemetry** (Dual-source: Open-Meteo & Visual Crossing fallback).
 2. **62-Feature Atmospheric Physics Engine** (Dew Point Depression, Vapor Pressure Deficit, Theta-e, and Diurnal Solar Insolation Weighting).
 3. **27-Year Karnataka Historical Climatology** ($9,862$ verified daily observation records from 2000 to 2027).
@@ -239,7 +239,7 @@ $$P_{\text{fused}} = 0.35 \times P_{\text{base}}(m) + 0.65 \times (E_{\text{conv
 
 ## 🌐 Deployment & Hosting Guide
 
-AeroCast AI combines Flask, serialized Gradient Boosted Decision Tree models (LightGBM & XGBoost), MongoDB Atlas persistence, and a background daemon thread. Follow the instructions below to deploy on **Render** (recommended) or configure with **MongoDB Atlas**.
+AeroCast-AI combines Flask, serialized Gradient Boosted Decision Tree models (LightGBM & XGBoost), MongoDB Atlas persistence, and a background daemon thread. Follow the instructions below to deploy on **Render** (recommended) or configure with **MongoDB Atlas**.
 
 ### 🍃 Option A: MongoDB Atlas Cloud Setup (Required for Production)
 
@@ -255,13 +255,10 @@ AeroCast AI combines Flask, serialized Gradient Boosted Decision Tree models (Li
    - Choose **Allow Access from Anywhere** (`0.0.0.0/0`) so that hosting providers (Render, Vercel) can connect reliably.
 4. **Obtain Connection String**:
    - Navigate to **Databases** → Click **Connect** on your cluster → Choose **Drivers (Python)**.
-   - Copy the URI, which looks like:
-     ```text
-     mongodb+srv://aerocast_admin:<password>@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-     ```
+   - Copy your cluster's connection URI string from the Atlas dashboard.
    - In your `.env` or Render environment settings, set:
      ```env
-     MONGODB_URI=mongodb+srv://aerocast_admin:<password>@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority
+     MONGODB_URI=<your-mongodb-atlas-connection-string>
      MONGODB_DB=aerocast_db
      ```
 
@@ -292,7 +289,7 @@ Render provides persistent Python containers ideal for running Flask, Gunicorn, 
      ```
 4. **Set Environment Variables in Render**:
    Navigate to the **Environment** tab in your Render service and add:
-   - `MONGODB_URI` = `mongodb+srv://aerocast_admin:your_password@cluster0.xyz.mongodb.net/?retryWrites=true&w=majority`
+   - `MONGODB_URI` = `<your-mongodb-atlas-connection-string>`
    - `MONGODB_DB` = `aerocast_db`
    - `SECRET_KEY` = `<generate-a-strong-random-secret-key>`
    - `GEMINI_API_KEY` = `<your-google-gemini-api-key>`
@@ -319,7 +316,7 @@ Create a `.env` file in the project root directory or supply these keys in your 
 
 | Variable | Required | Description | Example / Default |
 | :--- | :---: | :--- | :--- |
-| `MONGODB_URI` | **Yes** | MongoDB Atlas or local connection string | `mongodb+srv://...` or `mongodb://localhost:27017/` |
+| `MONGODB_URI` | **Yes** | MongoDB Atlas or local connection string | `<atlas-connection-uri>` or `mongodb://localhost:27017/` |
 | `MONGODB_DB` | No | Database name in MongoDB | `aerocast_db` |
 | `SECRET_KEY` | **Yes** | Flask session signing secret key | `<random-32-char-string>` |
 | `GEMINI_API_KEY` | Optional | Google Gemini Generative AI Key for Synoptic Advisories | `AIzaSy...` |
