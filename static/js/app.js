@@ -248,13 +248,15 @@ function initRadarMap() {
 
 
 /**
- * Update Leaflet Map Tile Theme (High-Performance CartoDB Voyager OSM tiles with Esri fallback)
- * Prevents OpenStreetMap volunteer-server 403 access blocks on forwarded ports & cloud domains.
+ * Update Leaflet Map Tile Theme (High-Performance CartoDB Voyager OSM tiles with User API Key & Esri fallback)
+ * Uses official CARTO Basemaps API key to deliver watermark-free high-resolution tiles.
  */
+const CARTO_BASEMAP_API_KEY = 'cb1_5630_1_79eb04260aa0a2d24eabe4c5';
+
 function updateMapTiles() {
   if (!radarMap || typeof L === 'undefined') return;
 
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const tileUrl = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_BASEMAP_API_KEY}`;
 
   if (tileLayer && tileLayer._url === tileUrl) {
     return;
