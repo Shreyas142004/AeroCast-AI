@@ -691,6 +691,7 @@ def get_nowcast():
 
             telemetry_pack = {
                 "temp": temp,
+                "feels_like": round(weather_data.get("feels_like", temp), 1),
                 "dew": dew,
                 "dpd": dpd,
                 "humidity": humidity,
@@ -714,10 +715,10 @@ def get_nowcast():
             else:
                 sub_list = [
                     {"name": f"{location} Central Market & Transit Hub", "query": location, "is_center": True},
-                    {"name": f"{location} North / Highland Ridge", "query": location, "dlat": 0.09, "dlon": 0.02},
-                    {"name": f"{location} South / River Basin", "query": location, "dlat": -0.09, "dlon": -0.02},
-                    {"name": f"{location} East / Agro Corridor", "query": location, "dlat": 0.02, "dlon": 0.11},
-                    {"name": f"{location} West / Transit Gateway", "query": location, "dlat": -0.02, "dlon": -0.11}
+                    {"name": f"{location} North / Highland Ridge", "query": location, "dlat": 0.025, "dlon": 0.015},
+                    {"name": f"{location} South / River Basin", "query": location, "dlat": -0.025, "dlon": 0.010},
+                    {"name": f"{location} East / Agro Corridor", "query": location, "dlat": 0.010, "dlon": 0.025},
+                    {"name": f"{location} West / Transit Gateway", "query": location, "dlat": -0.010, "dlon": -0.015}
                 ]
 
             zones_input_meta = []
@@ -727,22 +728,26 @@ def get_nowcast():
                 is_center = sub.get("is_center", False)
 
                 sub_coord = pl.KARNATAKA_CITY_COORDINATES.get(sub_q)
-                if is_center:
-                    sub_lat = lat
-                    sub_lon = lon
-                elif "lat" in sub and "lon" in sub:
+                if "lat" in sub and "lon" in sub and sub["lat"] is not None and sub["lon"] is not None:
                     sub_lat = sub["lat"]
                     sub_lon = sub["lon"]
-                elif sub_coord and sub_q != city_key:
-                    sub_lat = sub_coord["lat"]
-                    sub_lon = sub_coord["lon"]
+                elif is_center:
+                    sub_lat = lat
+                    sub_lon = lon
                 elif "dlat" in sub and "dlon" in sub:
                     sub_lat = round(lat + sub["dlat"], 4)
                     sub_lon = round(lon + sub["dlon"], 4)
+                elif sub_coord and sub_q != city_key:
+                    sub_lat = sub_coord["lat"]
+                    sub_lon = sub_coord["lon"]
                 else:
                     angle = (idx * (2 * 3.14159 / max(1, len(sub_list))))
-                    sub_lat = round(lat + 0.08 * math.cos(angle), 4)
-                    sub_lon = round(lon + 0.10 * math.sin(angle), 4)
+                    sub_lat = round(lat + 0.03 * math.cos(angle), 4)
+                    sub_lon = round(lon + 0.03 * math.sin(angle), 4)
+
+                # Ensure micro-zone markers never drift into the Arabian Sea along Karnataka coast
+                if sub_lat < 14.5 and sub_lon < 74.82:
+                    sub_lon = 74.82
 
                 is_hill = any(k in sub_name.lower() for k in ["sullia", "foothill", "ridge", "peak", "chamundi", "ghats"])
                 is_valley = any(k in sub_name.lower() for k in ["valley", "basin", "river", "lowland"])
@@ -801,9 +806,12 @@ def get_nowcast():
                 z_risk = matched["risk_level"] if matched else risk_level
 
                 z_timeline = generate_microzone_timeline(z_name, z_prob, meta["temp"], meta["humidity"], meta["cloudcover"])
+                main_feels = weather_data.get("feels_like", temp)
+                z_feels = round(meta["temp"] + (main_feels - temp), 1)
                 micro_zones.append({
                     "name": z_name,
                     "temp": meta["temp"],
+                    "feels_like": z_feels,
                     "dew": meta["dew"],
                     "cloudcover": meta["cloudcover"],
                     "humidity": meta["humidity"],

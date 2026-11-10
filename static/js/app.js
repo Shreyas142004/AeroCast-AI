@@ -13,8 +13,9 @@ const INITIAL_CITY_COORDS = {
   'puttur': [12.7667, 75.2016],
   'bajpe': [12.9803, 74.8832],
   'bajipe': [12.9803, 74.8832],
-  'mangaluru': [12.9141, 74.8560],
-  'mangalore': [12.9141, 74.8560],
+  'mangaluru': [12.8698, 74.8430],
+  'mangalore': [12.8698, 74.8430],
+  'hampankatta': [12.8698, 74.8430],
   'bengaluru': [12.9716, 77.5946],
   'bangalore': [12.9716, 77.5946],
   'hubballi': [15.3647, 75.1240],
@@ -23,7 +24,10 @@ const INITIAL_CITY_COORDS = {
   'mysore': [12.2958, 76.6394],
   'udupi': [13.3409, 74.7421],
   'manipal': [13.3525, 74.7865],
-  'bantwal': [12.8944, 75.0347],
+  'bantwal': [12.8954, 75.0409],
+  'buntwal': [12.8954, 75.0409],
+  'bantval': [12.8954, 75.0409],
+  'bc road': [12.8920, 75.0350],
   'sullia': [12.5562, 75.3897],
   'belthangady': [12.9984, 75.2575],
   'hassan': [13.0072, 76.1030],
@@ -95,13 +99,15 @@ function initApp() {
     setGpsButtonActive(false, false);
     fetchNowcast(explicitLoc);
   } else {
-    // Standard Website Launch: AUTOMATICALLY REQUEST AND LOAD WEATHER VIA DEVICE GPS
+    // Standard Website Launch: Immediately load default/saved location, then auto-upgrade via GPS if granted
     if (inputEl) {
-      inputEl.value = '';
-      inputEl.placeholder = 'Acquiring device GPS...';
+      inputEl.value = fallbackLocation;
       handleSearchInputChange(inputEl);
     }
     currentLocation = fallbackLocation;
+    // 1. Instantly fetch and display baseline nowcast so the dashboard is NEVER stuck on blank
+    fetchNowcast(fallbackLocation);
+    // 2. In parallel, request device GPS without blocking the dashboard
     requestDeviceGpsAndPredict(false, fallbackLocation);
   }
 
@@ -212,10 +218,18 @@ function initRadarMap() {
     radarLayersGroup = L.layerGroup().addTo(radarMap);
     stationMarkersGroup = L.layerGroup().addTo(radarMap);
 
-    // Force dimension check
-    setTimeout(() => {
-      if (radarMap) radarMap.invalidateSize();
-    }, 200);
+    // Robust multi-stage dimension check for delayed desktop browser, iframe, and VS Code port forwarding layout
+    setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 150);
+    setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 400);
+    setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 1000);
+
+    // Attach ResizeObserver to automatically adapt whenever map container dimension changes
+    if (typeof ResizeObserver !== 'undefined' && mapContainer) {
+      const ro = new ResizeObserver(() => {
+        if (radarMap) radarMap.invalidateSize();
+      });
+      ro.observe(mapContainer);
+    }
 
     // Automatic mobile orientation & resize adaptation
     window.addEventListener('resize', () => {
@@ -231,14 +245,14 @@ function initRadarMap() {
 
 
 /**
- * Update Leaflet Map Tile Theme (Consistently OpenStreetMap across both Dark and Light Themes)
+ * Update Leaflet Map Tile Theme (High-Performance CartoDB Voyager OSM tiles with Esri fallback)
+ * Prevents OpenStreetMap volunteer-server 403 access blocks on forwarded ports & cloud domains.
  */
 function updateMapTiles() {
   if (!radarMap || typeof L === 'undefined') return;
 
-  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
-  // If tileLayer is already loaded with OpenStreetMap, keep it seamlessly without flicker
   if (tileLayer && tileLayer._url === tileUrl) {
     return;
   }
@@ -247,11 +261,18 @@ function updateMapTiles() {
     try { radarMap.removeLayer(tileLayer); } catch (e) {}
   }
 
-  // Consistent OpenStreetMap across all themes (rich topography, towns, villages & boundaries)
   tileLayer = L.tileLayer(tileUrl, {
-    maxZoom: 18,
-    subdomains: ['a', 'b', 'c']
+    maxZoom: 19,
+    subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
   }).addTo(radarMap);
+
+  tileLayer.on('tileerror', function(error) {
+    if (error && error.coords && error.tile) {
+      const c = error.coords;
+      error.tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${c.z}/${c.y}/${c.x}`;
+    }
+  });
 }
 
 
@@ -278,7 +299,9 @@ function updateRadarMap(lat, lon, locationName, probability, microZones, isKarna
   // Zoom 12.5 spans ~18 km width x 10 km height on the radar container,
   // framing strictly the active Taluk (e.g. Mangalore Taluk or Puttur Taluk).
   const targetZoom = isKarnataka ? 12.5 : 7.0;
+  radarMap.invalidateSize();
   radarMap.flyTo([lat, lon], targetZoom, { duration: 1.2 });
+  setTimeout(() => { if (radarMap) radarMap.invalidateSize(); }, 350);
 
   if (radarLayersGroup) radarLayersGroup.clearLayers();
   if (stationMarkersGroup) stationMarkersGroup.clearLayers();
@@ -331,40 +354,22 @@ function updateRadarMap(lat, lon, locationName, probability, microZones, isKarna
   // 4. Micro-Zone Stations (Only display if inside Karnataka and micro-zones exist)
   if (microZones && microZones.length > 0) {
     microZones.forEach((zone, idx) => {
-      // If central hub or matches location name, link to focal marker
-      if (zone.is_center) {
-        zone._mapLat = lat;
-        zone._mapLon = lon;
-        microzoneMarkersMap[idx] = mainFocalMarker;
-        return;
-      }
       const cleanZoneName = zone.name.split('&')[0].split('(')[0].trim();
-      const cleanLower = cleanZoneName.toLowerCase();
-      const locLower = locationName.toLowerCase();
-      if (cleanLower === locLower || 
-          (cleanLower.includes(locLower) && (cleanLower.includes('centre') || cleanLower.includes('center') || cleanLower.includes('hub') || cleanLower.includes('observatory') || cleanLower.includes('stand')))) {
-        zone._mapLat = lat;
-        zone._mapLon = lon;
-        microzoneMarkersMap[idx] = mainFocalMarker;
-        return;
-      }
 
-      // Determine Coordinates
-      let zLat = zone.lat;
-      let zLon = zone.lon;
+      // Determine Exact Sub-Zone Coordinates (Strictly preserve real GPS without artificial offsets)
+      let zLat = (zone.lat !== undefined && zone.lat !== null) ? Number(zone.lat) : null;
+      let zLon = (zone.lon !== undefined && zone.lon !== null) ? Number(zone.lon) : null;
 
       if (!zLat || !zLon) {
-        const angles = [0.4, 1.8, 3.2, 4.8];
-        const angle = angles[idx % angles.length];
-        zLat = lat + (0.038 * Math.cos(angle));
-        zLon = lon + (0.042 * Math.sin(angle));
-      }
-
-      // Check distance from focal point (if under ~1.2 km, nudge slightly to prevent label overlap)
-      const distFromCenter = Math.hypot(zLat - lat, zLon - lon);
-      if (distFromCenter < 0.012) {
-        if (zLat >= lat) zLat += 0.016;
-        else zLat -= 0.016;
+        if (zone.is_center) {
+          zLat = lat;
+          zLon = lon;
+        } else {
+          const angles = [0.4, 1.8, 3.2, 4.8];
+          const angle = angles[idx % angles.length];
+          zLat = lat + (0.025 * Math.cos(angle));
+          zLon = lon + (0.025 * Math.sin(angle));
+        }
       }
 
       zone._mapLat = zLat;
@@ -520,6 +525,7 @@ function hideLoadingScreen() {
     overlay.classList.remove('active');
     setTimeout(() => {
       overlay.style.display = 'none';
+      if (radarMap) radarMap.invalidateSize();
     }, 200);
   }, remaining);
 }
@@ -624,24 +630,28 @@ function requestDeviceGpsAndPredict(userInitiated = true, fallbackLocation = nul
   const inputEl = document.getElementById('locationInput');
   const userLoc = fallbackLocation || (document.body.dataset.userLocality || '').trim() || 'Puttur';
 
-  setGpsButtonActive(false, true); // true = spinner loading
-  showGpsToast(userInitiated ? "Acquiring GPS coordinates from device..." : "Detecting device GPS for real-time weather...", 3500);
+  if (userInitiated) {
+    setGpsButtonActive(false, true); // true = spinner loading
+    showGpsToast("Acquiring GPS coordinates from device...", 3500);
+  }
 
   if (!navigator.geolocation) {
     console.warn("[GPS] Geolocation is not supported by this browser.");
     setGpsButtonActive(false, false);
-    showGpsToast("GPS not supported by browser. Loading " + userLoc, 4000);
-    if (inputEl) {
-      inputEl.value = userLoc;
-      handleSearchInputChange(inputEl);
+    if (userInitiated) {
+      showGpsToast("GPS not supported by browser. Using " + userLoc, 4000);
+      if (inputEl) {
+        inputEl.value = userLoc;
+        handleSearchInputChange(inputEl);
+      }
+      fetchNowcast(userLoc);
     }
-    fetchNowcast(userLoc);
     return;
   }
 
   const gpsOptions = {
     enableHighAccuracy: true,
-    timeout: 10000,
+    timeout: 8000,
     maximumAge: 0
   };
 
@@ -657,9 +667,9 @@ function requestDeviceGpsAndPredict(userInitiated = true, fallbackLocation = nul
 
       // If accuracy is coarse (> 5,000m, typical of desktop Wi-Fi IP geolocation to Bangalore), notify user
       if (accuracy > 5000) {
-        showGpsToast(`📍 Browser network location: ±${Math.round(accuracy / 1000)}km radius. If inaccurate, search your town above.`, 6000);
+        showGpsToast(`📍 Browser network location: ±${Math.round(accuracy / 1000)}km radius. If inaccurate, search your town above.`, 5000);
       } else {
-        showGpsToast(`📍 GPS located! Fetching real-time weather...`, 2500);
+        showGpsToast(`📍 GPS located! Loading live weather...`, 2500);
       }
 
       fetchNowcastByCoords(lat, lon, true);
@@ -674,12 +684,14 @@ function requestDeviceGpsAndPredict(userInitiated = true, fallbackLocation = nul
         reason = "Device GPS position unavailable.";
       }
       console.warn(`[GPS Notice] ${reason}`);
-      showGpsToast(`📍 ${reason} Using ${userLoc}. You can search any place above.`, 5000);
-      if (inputEl) {
-        inputEl.value = userLoc;
-        handleSearchInputChange(inputEl);
+      if (userInitiated) {
+        showGpsToast(`📍 ${reason} Using ${userLoc}. You can search any place above.`, 4000);
+        if (inputEl) {
+          inputEl.value = userLoc;
+          handleSearchInputChange(inputEl);
+        }
+        fetchNowcast(userLoc);
       }
-      fetchNowcast(userLoc);
     },
     gpsOptions
   );
@@ -1300,8 +1312,11 @@ function renderDashboard(data) {
 
   // 4. Telemetry Stack (Disabled & Hidden for Out-of-Karnataka Locations)
   if (isKa && tel.temp !== null && tel.temp !== undefined) {
-    document.getElementById('tempVal').textContent = `${tel.temp}°C`;
-    document.getElementById('feelsLikeSub').textContent = `Feels like ${(tel.temp + 2.5).toFixed(1)}°C`;
+    document.getElementById('tempVal').textContent = `${Number(tel.temp).toFixed(1)}°C`;
+    const realFeelsLike = (tel.feels_like !== null && tel.feels_like !== undefined)
+      ? Number(tel.feels_like).toFixed(1)
+      : Number(tel.temp).toFixed(1);
+    document.getElementById('feelsLikeSub').textContent = `Feels like ${realFeelsLike}°C`;
   } else {
     document.getElementById('tempVal').textContent = '--';
     document.getElementById('feelsLikeSub').textContent = 'Outside Karnataka Grid';
@@ -1672,6 +1687,7 @@ function openMicrozoneModal(zone, data) {
 
   const zProb = parseFloat(zone.probability !== undefined && zone.probability !== null ? zone.probability : (data.prediction?.convective_probability || 30.0));
   const zTemp = zone.temp !== undefined ? zone.temp : (data.telemetry?.temp || 26.5);
+  const zFeels = zone.feels_like !== undefined ? zone.feels_like : (data.telemetry?.feels_like || zTemp);
   const zHum = zone.humidity !== undefined ? zone.humidity : (data.telemetry?.humidity || 82.0);
   const zCloud = zone.cloudcover !== undefined ? zone.cloudcover : (data.telemetry?.cloudcover || 75.0);
 
@@ -1692,7 +1708,7 @@ function openMicrozoneModal(zone, data) {
   }
 
   if (mzmSummaryMeta) {
-    mzmSummaryMeta.textContent = `Current Baseline: ${zTemp.toFixed(1)}°C • ${zHum.toFixed(0)}% Hum • ${zCloud.toFixed(0)}% Clouds`;
+    mzmSummaryMeta.textContent = `Current Baseline: ${zTemp.toFixed(1)}°C (Feels like ${zFeels.toFixed(1)}°C) • ${zHum.toFixed(0)}% Hum • ${zCloud.toFixed(0)}% Clouds`;
   }
 
   // Obtain or synthesize 3-step timeline (+30m, +60m, +90m)

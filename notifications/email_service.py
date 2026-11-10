@@ -10,6 +10,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Dict, Any, Tuple, Optional
+# pyrefly: ignore[missing-import]
 from dotenv import load_dotenv
 
 

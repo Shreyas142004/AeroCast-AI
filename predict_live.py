@@ -110,8 +110,8 @@ def map_dataset_weather_condition(
 KARNATAKA_CITY_COORDINATES = {
     "bangalore": {"lat": 12.9716, "lon": 77.5946, "name": "Bengaluru (Bangalore), Karnataka, India"},
     "bengaluru": {"lat": 12.9716, "lon": 77.5946, "name": "Bengaluru (Bangalore), Karnataka, India"},
-    "mangalore": {"lat": 12.9141, "lon": 74.8560, "name": "Mangaluru (Mangalore), Karnataka, India"},
-    "mangaluru": {"lat": 12.9141, "lon": 74.8560, "name": "Mangaluru (Mangalore), Karnataka, India"},
+    "mangalore": {"lat": 12.8698, "lon": 74.8430, "name": "Mangaluru (Mangalore), Karnataka, India"},
+    "mangaluru": {"lat": 12.8698, "lon": 74.8430, "name": "Mangaluru (Mangalore), Karnataka, India"},
     "shimoga": {"lat": 13.9299, "lon": 75.5681, "name": "Shivamogga (Shimoga), Karnataka, India"},
     "shivamogga": {"lat": 13.9299, "lon": 75.5681, "name": "Shivamogga (Shimoga), Karnataka, India"},
     "mysore": {"lat": 12.2958, "lon": 76.6394, "name": "Mysuru (Mysore), Karnataka, India"},
@@ -173,7 +173,15 @@ KARNATAKA_CITY_COORDINATES = {
     "kabaka": {"lat": 12.7950, "lon": 75.2050, "name": "Kabaka & Nehru Nagar, Puttur, Karnataka, India"},
     "nehru nagar": {"lat": 12.7950, "lon": 75.2050, "name": "Kabaka & Nehru Nagar, Puttur, Karnataka, India"},
     "uppinangady": {"lat": 12.8420, "lon": 75.2950, "name": "Uppinangady, Dakshina Kannada, Karnataka, India"},
-    "bantwal": {"lat": 12.8900, "lon": 75.0300, "name": "Bantwal, Dakshina Kannada, Karnataka, India"},
+    "bantwal": {"lat": 12.8954, "lon": 75.0409, "name": "Bantwal, Dakshina Kannada, Karnataka, India"},
+    "buntwal": {"lat": 12.8954, "lon": 75.0409, "name": "Bantwal, Dakshina Kannada, Karnataka, India"},
+    "bantval": {"lat": 12.8954, "lon": 75.0409, "name": "Bantwal, Dakshina Kannada, Karnataka, India"},
+    "bc road": {"lat": 12.8920, "lon": 75.0350, "name": "B.C. Road, Bantwal, Karnataka, India"},
+    "b.c. road": {"lat": 12.8920, "lon": 75.0350, "name": "B.C. Road, Bantwal, Karnataka, India"},
+    "modankap": {"lat": 12.8940, "lon": 75.0460, "name": "Modankap, Bantwal, Karnataka, India"},
+    "melkar": {"lat": 12.8765, "lon": 75.0290, "name": "Melkar, Bantwal, Karnataka, India"},
+    "panemangalore": {"lat": 12.8805, "lon": 75.0180, "name": "Panemangalore, Bantwal, Karnataka, India"},
+    "kalladka": {"lat": 12.8590, "lon": 75.0740, "name": "Kalladka, Bantwal, Karnataka, India"},
     "vittla": {"lat": 12.7674, "lon": 75.1012, "name": "Vitla (Vittla), Dakshina Kannada, Karnataka, India"},
     "vitla": {"lat": 12.7674, "lon": 75.1012, "name": "Vitla (Vittla), Dakshina Kannada, Karnataka, India"},
     "sullia": {"lat": 12.5606, "lon": 75.3905, "name": "Sullia, Dakshina Kannada, Karnataka, India"}
@@ -250,6 +258,14 @@ KARNATAKA_SUB_LOCATIONS = {
         {"name": "Bannur & Kemminje Green Corridor", "query": "kemminje", "lat": 12.7520, "lon": 75.2210},
         {"name": "Aryapu & Balnadu Rural Valley", "query": "aryapu", "lat": 12.7350, "lon": 75.1750},
         {"name": "Bettampady & Ariyadka Foothills", "query": "bettampady", "lat": 12.7150, "lon": 75.2280}
+    ],
+    "bantwal": [
+        {"name": "B.C. Road (Taluk Transit Hub & Commercial Core)", "query": "b.c. road", "is_center": True, "lat": 12.8920, "lon": 75.0350},
+        {"name": "Bantwal Town & Netravati Basin", "query": "bantwal", "lat": 12.8985, "lon": 75.0315},
+        {"name": "Modankap & Church Hills", "query": "modankap", "lat": 12.8940, "lon": 75.0460},
+        {"name": "Melkar Commercial Junction", "query": "melkar", "lat": 12.8765, "lon": 75.0290},
+        {"name": "Panemangalore Historic Sector", "query": "panemangalore", "lat": 12.8805, "lon": 75.0180},
+        {"name": "Kalladka & NH-75 Highland Belt", "query": "kalladka", "lat": 12.8590, "lon": 75.0740}
     ]
 }
 
@@ -261,7 +277,13 @@ CITY_ALIASES = {
     "belagavi": "belgaum",
     "hubballi": "hubli",
     "kodagu": "coorg",
-    "chikkamagaluru": "chikmagalur"
+    "chikkamagaluru": "chikmagalur",
+    "buntwal": "bantwal",
+    "bantval": "bantwal",
+    "buntwala": "bantwal",
+    "bantwala": "bantwal",
+    "bc road": "bantwal",
+    "b.c. road": "bantwal"
 }
 
 
@@ -356,7 +378,7 @@ def fetch_weather_data_by_coords(lat: float, lon: float, location_hint: str = No
         }
 
     try:
-        wurl = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&timezone=Asia%2FKolkata&forecast_hours=6"
+        wurl = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&timezone=Asia%2FKolkata&forecast_hours=6"
         wreq = urllib.request.Request(wurl, headers=headers)
         wresp = urllib.request.urlopen(wreq, timeout=6)
         resp_data = json.loads(wresp.read().decode('utf-8'))
@@ -368,6 +390,9 @@ def fetch_weather_data_by_coords(lat: float, lon: float, location_hint: str = No
         raw_cond = WMO_WEATHER_DESCRIPTIONS.get(wcode, f"Weather Code {wcode}")
         cond_text = map_dataset_weather_condition(float(wdata['cloud_cover']), precip, wcode, raw_cond)
 
+        temp_c = float(wdata['temperature_2m'])
+        feels_c = float(wdata.get('apparent_temperature', temp_c))
+
         return {
             "location_name": place_name,
             "resolved_address": resolved_name,
@@ -377,7 +402,8 @@ def fetch_weather_data_by_coords(lat: float, lon: float, location_hint: str = No
             "is_gps": True,
             "admin1": admin1,
             "country": country,
-            "temp": float(wdata['temperature_2m']),
+            "temp": temp_c,
+            "feels_like": feels_c,
             "dew": float(wdata['dew_point_2m']),
             "humidity": float(wdata['relative_humidity_2m']),
             "windspeed": float(wdata['wind_speed_10m']),
@@ -403,6 +429,7 @@ def fetch_weather_data_by_coords(lat: float, lon: float, location_hint: str = No
             precip = float(curr.get("precip") or 0.0)
             cloud_val = float(curr.get("cloudcover") or 50.0)
             temp_val = float(curr.get("temp") or 30.0)
+            feels_val = float(curr.get("feelslike") or temp_val)
             cond_text = map_dataset_weather_condition(cloud_val, precip, raw_condition=raw_cond)
 
             return {
@@ -415,6 +442,7 @@ def fetch_weather_data_by_coords(lat: float, lon: float, location_hint: str = No
                 "admin1": admin1,
                 "country": country,
                 "temp": temp_val,
+                "feels_like": feels_val,
                 "dew": float(curr.get("dew", 20.0)),
                 "humidity": float(curr.get("humidity", 70.0)),
                 "windspeed": float(curr.get("windspeed", 15.0)),
@@ -484,7 +512,7 @@ def fetch_weather_data_accurate(location: str) -> dict:
             }
 
         try:
-            wurl = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&timezone=Asia%2FKolkata&forecast_hours=6"
+            wurl = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,weather_code,precipitation&timezone=Asia%2FKolkata&forecast_hours=6"
             wreq = urllib.request.Request(wurl, headers=headers)
             wresp = urllib.request.urlopen(wreq, timeout=6)
             resp_data = json.loads(wresp.read().decode('utf-8'))
@@ -496,6 +524,9 @@ def fetch_weather_data_accurate(location: str) -> dict:
             raw_cond = WMO_WEATHER_DESCRIPTIONS.get(wcode, f"Weather Code {wcode}")
             cond_text = map_dataset_weather_condition(float(wdata['cloud_cover']), precip, wcode, raw_cond)
 
+            temp_c = float(wdata['temperature_2m'])
+            feels_c = float(wdata.get('apparent_temperature', temp_c))
+
             return {
                 "resolved_address": resolved_name,
                 "latitude": lat,
@@ -503,7 +534,8 @@ def fetch_weather_data_accurate(location: str) -> dict:
                 "is_karnataka": True,
                 "admin1": coord_info.get("admin1", "Karnataka"),
                 "country": coord_info.get("country", "India"),
-                "temp": float(wdata['temperature_2m']),
+                "temp": temp_c,
+                "feels_like": feels_c,
                 "dew": float(wdata['dew_point_2m']),
                 "humidity": float(wdata['relative_humidity_2m']),
                 "windspeed": float(wdata['wind_speed_10m']),
@@ -533,6 +565,7 @@ def fetch_weather_data_accurate(location: str) -> dict:
             precip = float(curr.get("precip") or 0.0)
             cloud_val = float(curr.get("cloudcover") or 50.0)
             temp_val = float(curr.get("temp") or 30.0)
+            feels_val = float(curr.get("feelslike") or temp_val)
             cond_text = map_dataset_weather_condition(cloud_val, precip, raw_condition=raw_cond)
 
             return {
@@ -541,6 +574,7 @@ def fetch_weather_data_accurate(location: str) -> dict:
                 "longitude": coord_info["lon"],
                 "is_karnataka": True,
                 "temp": temp_val,
+                "feels_like": feels_val,
                 "dew": float(curr.get("dew", 20.0)),
                 "humidity": float(curr.get("humidity", 70.0)),
                 "windspeed": float(curr.get("windspeed", 15.0)),

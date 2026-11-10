@@ -72,9 +72,7 @@ def is_locality_match(user_locality: Optional[str], alert_location: Optional[str
 
 def get_target_users(location: str = None, current_user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Finds registered recipients in MongoDB:
-    ONLY users whose registered locality matches the storm alert location receive the alert.
-    Users residing in other cities/taluks do NOT receive this alert.
+    Finds all registered recipients in MongoDB to ensure every registered user receives alerts.
     """
     col = get_users_collection()
     recipients = []
@@ -92,21 +90,20 @@ def get_target_users(location: str = None, current_user_id: Optional[str] = None
         except Exception:
             pass
 
-    # 2. Add all registered users from MongoDB whose registered locality matches the alert location
+    # 2. Add all registered users from MongoDB so everyone receives emergency alerts
     all_users = list(col.find())
     for u in all_users:
         uid = str(u["_id"])
         if uid in seen_ids:
             continue
-        u_loc = u.get("locality") or ""
-        if not location or is_locality_match(u_loc, location):
-            recipients.append(u)
-            seen_ids.add(uid)
+        recipients.append(u)
+        seen_ids.add(uid)
 
     return recipients
 
 
 _DISPATCH_THROTTLE = {}
+_RECENT_IN_MEMORY_DISPATCHES: List[Dict[str, Any]] = []
 
 
 def dispatch_thunderstorm_alerts_async(
@@ -197,14 +194,13 @@ def dispatch_thunderstorm_alerts(
             print(f"[SMTP BATCH NOTE] Standalone fallback: {e}")
             smtp_conn = None
 
-    # Dispatch Telegram push alert ONLY to matching users in this locality who have linked Telegram
+    # Dispatch Telegram push alert to ALL active subscribers and registered chat IDs
     telegram_status = "skipped"
     telegram_note = ""
-    matching_chat_ids = [str(u["telegram_chat_id"]).strip() for u in recipients if u.get("telegram_chat_id") and str(u["telegram_chat_id"]).strip().lstrip("-").isdigit()]
 
-    if ("telegram" in channels or "sms" in channels) and matching_chat_ids:
+    if "telegram" in channels or "sms" in channels:
         try:
-            t_ok, t_stat, t_msg = send_telegram_alert(alert_data, chat_id=",".join(matching_chat_ids), force=force)
+            t_ok, t_stat, t_msg = send_telegram_alert(alert_data, force=force)
             telegram_status = t_stat
             telegram_note = t_msg
             if t_stat == "sent":
@@ -212,9 +208,6 @@ def dispatch_thunderstorm_alerts(
         except Exception as e:
             telegram_status = "failed"
             telegram_note = str(e)
-    elif not matching_chat_ids:
-        telegram_status = "skipped"
-        telegram_note = f"No Telegram chat IDs registered for users in {location}."
 
     try:
         for user in recipients:
@@ -248,8 +241,6 @@ def dispatch_thunderstorm_alerts(
                 if s_stat == "sent":
                     has_live_delivery = True
 
-            # Telegram alert already broadcasted once for this event
-
             record = {
                 "user_id": str(user["_id"]),
                 "username": username,
@@ -271,13 +262,14 @@ def dispatch_thunderstorm_alerts(
                 "timestamp_display": datetime.datetime.now().strftime("%I:%M:%S %p IST")
             }
 
-            try:
-                notif_col.insert_one(record)
-                record["_id"] = str(record["_id"])
-            except Exception as e:
-                print(f"[MongoDB WARNING] Could not log notification receipt: {e}")
-
+            # Per user request: DO NOT save notifications in the database
+            record["_id"] = f"mem_{user['_id']}"
             dispatches.append(record)
+
+        global _RECENT_IN_MEMORY_DISPATCHES
+        _RECENT_IN_MEMORY_DISPATCHES.extend(dispatches)
+        if len(_RECENT_IN_MEMORY_DISPATCHES) > 50:
+            _RECENT_IN_MEMORY_DISPATCHES[:] = _RECENT_IN_MEMORY_DISPATCHES[-50:]
 
     finally:
         if smtp_conn:
@@ -299,15 +291,5 @@ def dispatch_thunderstorm_alerts(
 
 
 def get_notification_history(limit: int = 15) -> List[Dict[str, Any]]:
-    """Returns recent alert notifications from MongoDB."""
-    try:
-        col = get_db()["notifications"]
-        docs = list(col.find().sort("dispatched_at", -1).limit(limit))
-        for d in docs:
-            d["_id"] = str(d["_id"])
-            if "dispatched_at" in d and isinstance(d["dispatched_at"], datetime.datetime):
-                d["dispatched_at"] = d["dispatched_at"].isoformat()
-        return docs
-    except Exception as e:
-        print(f"[MongoDB ERROR] get_notification_history failed: {e}")
-        return []
+    """Returns recent in-memory alert notifications without persisting to MongoDB."""
+    return list(reversed(_RECENT_IN_MEMORY_DISPATCHES))[:limit]
